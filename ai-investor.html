@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Investor — Lodge Consulting</title>
+<style>
+  :root {
+    --bg: #FAF9F5;
+    --surface: #FFFFFF;
+    --surface-2: #F1EFE8;
+    --text: #1A1A19;
+    --text-muted: #5F5E5A;
+    --text-subtle: #888780;
+    --border: rgba(0,0,0,0.12);
+    --border-strong: rgba(0,0,0,0.25);
+    --info-bg: #E6F1FB;
+    --info-text: #0C447C;
+    --info-border: #378ADD;
+    --success-bg: #EAF3DE;
+    --success-text: #27500A;
+    --danger-bg: #FCEBEB;
+    --danger-text: #791F1F;
+    --warn-bg: #FAEEDA;
+    --warn-text: #633806;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 2rem 1rem;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  header { margin-bottom: 1.5rem; }
+  h1 { font-size: 24px; font-weight: 500; margin: 0 0 4px; }
+  .byline { font-size: 13px; color: var(--text-muted); margin: 0; }
+  .panel {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  h3 { margin: 0 0 0.75rem; font-size: 16px; font-weight: 500; }
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1rem; }
+  .stat { background: var(--surface-2); border-radius: var(--radius); padding: 0.75rem 1rem; }
+  .stat-label { font-size: 12px; color: var(--text-muted); margin: 0; }
+  .stat-value { font-size: 18px; font-weight: 500; margin: 2px 0 0; }
+  .news {
+    font-family: Georgia, serif;
+    font-size: 15px;
+    line-height: 1.65;
+    background: var(--surface-2);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    min-height: 100px;
+    user-select: text;
+  }
+  .news-head { font-weight: 500; font-size: 16px; margin: 0 0 0.5rem; font-family: inherit; color: var(--text); }
+  .news-word { cursor: pointer; border-radius: 3px; padding: 0 2px; transition: background 0.12s; }
+  .news-word:hover { background: var(--warn-bg); }
+  .news-word.flagged { background: var(--warn-bg); color: var(--warn-text); font-weight: 500; }
+  .news-word.correct { background: var(--success-bg); color: var(--success-text); font-weight: 500; }
+  .news-word.wrong { background: var(--danger-bg); color: var(--danger-text); text-decoration: line-through; }
+  .companies { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin: 1rem 0; }
+  .co-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: border-color 0.12s;
+  }
+  .co-card:hover { border-color: var(--border-strong); }
+  .co-card.selected { border: 2px solid var(--info-border); padding: calc(0.75rem - 1.5px); }
+  .co-card.focal { background: var(--info-bg); }
+  .co-name { font-weight: 500; font-size: 14px; margin: 0; }
+  .co-sector { font-size: 12px; color: var(--text-muted); margin: 2px 0; }
+  .co-price { font-size: 15px; font-weight: 500; margin-top: 4px; }
+  .co-delta { font-size: 12px; margin-top: 2px; }
+  .up { color: var(--success-text); }
+  .down { color: var(--danger-text); }
+  .flat { color: var(--text-muted); }
+  .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 1rem; }
+  input[type="range"] { flex: 1; min-width: 160px; accent-color: var(--info-border); }
+  .amount { font-weight: 500; font-size: 15px; min-width: 80px; text-align: right; }
+  button {
+    background: var(--surface);
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius);
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--text);
+    transition: background 0.1s;
+  }
+  button:hover:not(:disabled) { background: var(--surface-2); }
+  button:active:not(:disabled) { transform: scale(0.98); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .btn-primary:hover:not(:disabled) { background: #333; }
+  .status { font-size: 13px; color: var(--text-muted); margin: 0.5rem 0 0; }
+  .err { color: var(--danger-text); font-size: 13px; margin-top: 0.5rem; }
+  .log { max-height: 180px; overflow-y: auto; font-size: 13px; line-height: 1.6; color: var(--text-muted); }
+  .log-round { padding: 6px 0; border-bottom: 0.5px solid var(--border); }
+  .log-round:last-child { border-bottom: none; }
+  .hidden { display: none; }
+  .win-banner {
+    background: var(--success-bg);
+    color: var(--success-text);
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius);
+    font-weight: 500;
+    margin-bottom: 1rem;
+  }
+  .chip {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    color: var(--text-muted);
+    margin-left: 6px;
+    font-weight: 400;
+  }
+  .chip-info { background: var(--info-bg); color: var(--info-text); }
+  .chip-warn { background: var(--warn-bg); color: var(--warn-text); }
+  .instructions {
+    background: var(--info-bg);
+    color: var(--info-text);
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    font-size: 13px;
+    margin-bottom: 1rem;
+  }
+  .instructions strong { color: var(--info-text); }
+  .tell-feedback {
+    margin-top: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface-2);
+    border-radius: var(--radius);
+    font-size: 13px;
+  }
+  .tell-feedback h4 { margin: 0 0 6px; font-size: 13px; font-weight: 500; }
+  .tell-feedback ul { margin: 4px 0 0; padding-left: 1.2rem; }
+  .tell-feedback li { margin-bottom: 2px; }
+  footer { font-size: 12px; color: var(--text-subtle); margin-top: 2rem; text-align: center; }
+  footer a { color: var(--text-muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>AI Investor</h1>
+    <p class="byline">A Lodge Consulting game — read the AI news, spot the tells, invest wisely.</p>
+  </header>
+
+  <div class="panel">
+    <div class="stat-row">
+      <div class="stat"><p class="stat-label">Round</p><p class="stat-value" id="round">1 / 10</p></div>
+      <div class="stat"><p class="stat-label">Cash</p><p class="stat-value" id="cash">£10,000</p></div>
+      <div class="stat"><p class="stat-label">Bonus</p><p class="stat-value" id="bonus">£0</p></div>
+      <div class="stat"><p class="stat-label">Flags left</p><p class="stat-value" id="flags">3</p></div>
+    </div>
+
+    <div id="phase-news">
+      <h3>The morning wire <span class="chip chip-info" id="sector-chip"></span></h3>
+      <div class="instructions">
+        <strong>Spot the AI tells.</strong> Click up to 3 words or short phrases you think are giveaways of AI-generated text (vague sourcing, hype clichés, generic phrasing). You'll earn bonus cash for correct flags after the market resolves.
+      </div>
+      <div class="news" id="news-body">Wire services firing up…</div>
+      <p class="status" id="news-status"></p>
+      <div class="controls">
+        <button id="clear-flags-btn">Clear flags</button>
+        <button id="to-invest-btn" class="btn-primary">Ready to invest →</button>
+      </div>
+    </div>
+
+    <div id="phase-invest" class="hidden">
+      <h3>Pick one company and invest</h3>
+      <div class="companies" id="co-grid"></div>
+      <div class="controls">
+        <label style="font-size: 14px; color: var(--text-muted);">Stake</label>
+        <input type="range" id="stake" min="0" step="100" value="0" />
+        <span class="amount" id="stake-out">£0</span>
+        <button id="invest-btn" class="btn-primary">Invest →</button>
+      </div>
+      <p class="status" id="invest-status">Pick a company to continue.</p>
+      <p class="err" id="invest-err"></p>
+    </div>
+
+    <div id="phase-reveal" class="hidden">
+      <h3>Market close</h3>
+      <div class="companies" id="reveal-grid"></div>
+      <p class="status" id="reveal-status"></p>
+      <div id="tell-feedback" class="tell-feedback hidden"></div>
+      <div class="controls">
+        <button id="next-btn" class="btn-primary">Next round →</button>
+      </div>
+    </div>
+
+    <div id="phase-end" class="hidden">
+      <div class="win-banner" id="win-banner"></div>
+      <div class="controls">
+        <button id="restart-btn" class="btn-primary">Play again</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3 style="font-size: 14px;">Round history</h3>
+    <div class="log" id="log"><p style="margin:0;">No rounds played yet.</p></div>
+  </div>
+
+  <footer>
+    Built for <a href="#" target="_blank">Lodge Consulting</a> · Tunbridge Wells · AI for communities and small businesses
+  </footer>
+</div>
+
+<script>
+// ======================================================
+// CONFIG — set this to your deployed Cloudflare Worker URL
+// ======================================================
+const WORKER_URL = "https://YOUR-WORKER.YOUR-SUBDOMAIN.workers.dev";
+// ======================================================
+
+const SECTORS = [
+  { name: "Helios Solar", sector: "Renewable energy" },
+  { name: "Orbital Freight", sector: "Space logistics" },
+  { name: "Marrow Biotech", sector: "Pharmaceuticals" },
+  { name: "Northwind Bank", sector: "Finance" },
+  { name: "Tessera Games", sector: "Entertainment" },
+  { name: "Grainhouse Foods", sector: "Agriculture" }
+];
+
+const state = {
+  round: 1,
+  maxRounds: 10,
+  cash: 10000,
+  bonus: 0,
+  prices: SECTORS.map(() => 100),
+  history: [],
+  currentNews: null,
+  currentSectorIdx: null,
+  selectedCo: null,
+  stake: 0,
+  flags: [],           // indices of flagged word-spans
+  flagsLeft: 3,
+  wordSpans: [],       // {word, idx, flagged}
+  phase: "news"
+};
+
+const $ = (id) => document.getElementById(id);
+const fmt = (n) => "£" + Math.round(n).toLocaleString();
+
+function render() {
+  $("round").textContent = state.round + " / " + state.maxRounds;
+  $("cash").textContent = fmt(state.cash);
+  $("bonus").textContent = (state.bonus >= 0 ? "+" : "") + fmt(state.bonus);
+  $("flags").textContent = state.flagsLeft;
+  renderLog();
+}
+
+function renderLog() {
+  const log = $("log");
+  if (!state.history.length) {
+    log.innerHTML = '<p style="margin:0;">No rounds played yet.</p>'; return;
+  }
+  log.innerHTML = state.history.map(h => {
+    const sign = h.profit >= 0 ? "+" : "";
+    const cls = h.profit > 0 ? "up" : h.profit < 0 ? "down" : "flat";
+    const bonusTxt = h.tellBonus ? ` · tells <span class="${h.tellBonus > 0 ? 'up' : 'down'}">${h.tellBonus > 0 ? '+' : ''}${fmt(h.tellBonus)}</span>` : "";
+    return `<div class="log-round"><strong>Round ${h.round}</strong> — ${h.company}: staked ${fmt(h.stake)}, <span class="${cls}">${sign}${fmt(h.profit)}</span> (${h.movePct > 0 ? "+" : ""}${h.movePct}%)${bonusTxt}</div>`;
+  }).reverse().join("");
+}
+
+function showPhase(p) {
+  ["news","invest","reveal","end"].forEach(x => $("phase-" + x).classList.add("hidden"));
+  $("phase-" + p).classList.remove("hidden");
+  state.phase = p;
+}
+
+async function callClaude(messages, systemPrompt, model = "claude-sonnet-4-20250514") {
+  const res = await fetch(WORKER_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model,
+      max_tokens: 1000,
+      system: systemPrompt,
+      messages
+    })
+  });
+  if (!res.ok) throw new Error("API error " + res.status);
+  const data = await res.json();
+  return (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n");
+}
+
+function renderNewsAsClickable(text) {
+  // Split into word-spans (words + attached punctuation)
+  const parts = text.split(/(\s+)/);
+  state.wordSpans = [];
+  let idx = 0;
+  const html = parts.map(p => {
+    if (/^\s+$/.test(p)) return p;
+    const thisIdx = idx++;
+    state.wordSpans.push({ word: p, idx: thisIdx, flagged: false });
+    return `<span class="news-word" data-idx="${thisIdx}">${escapeHtml(p)}</span>`;
+  }).join("");
+  $("news-body").innerHTML = html;
+  $("news-body").querySelectorAll(".news-word").forEach(el => {
+    el.addEventListener("click", () => toggleFlag(parseInt(el.dataset.idx), el));
+  });
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+function toggleFlag(idx, el) {
+  if (state.phase !== "news") return;
+  const span = state.wordSpans[idx];
+  if (span.flagged) {
+    span.flagged = false;
+    el.classList.remove("flagged");
+    state.flagsLeft++;
+    state.flags = state.flags.filter(i => i !== idx);
+  } else {
+    if (state.flagsLeft <= 0) return;
+    span.flagged = true;
+    el.classList.add("flagged");
+    state.flagsLeft--;
+    state.flags.push(idx);
+  }
+  render();
+}
+
+$("clear-flags-btn").addEventListener("click", () => {
+  state.flags = [];
+  state.flagsLeft = 3;
+  state.wordSpans.forEach(s => s.flagged = false);
+  $("news-body").querySelectorAll(".news-word").forEach(el => el.classList.remove("flagged"));
+  render();
+});
+
+$("to-invest-btn").addEventListener("click", () => {
+  showPhase("invest");
+  renderCompanies();
+});
+
+async function generateNews() {
+  $("news-body").textContent = "Wire services firing up…";
+  $("news-status").textContent = "";
+  $("sector-chip").textContent = "";
+  state.flags = [];
+  state.flagsLeft = 3;
+  render();
+
+  const sectorIdx = Math.floor(Math.random() * SECTORS.length);
+  state.currentSectorIdx = sectorIdx;
+  const focus = SECTORS[sectorIdx];
+
+  const sys = "You are a financial news wire writing short market-moving stories about fictional companies. Never reveal whether news is bullish or bearish explicitly — let the reader judge. Keep it 3-4 sentences. Mix obvious signals with ambiguous ones. Deliberately include 1-3 subtle AI-generated tells: vague sourcing ('sources close to the company', 'industry observers'), generic hype phrases ('revolutionary breakthrough', 'game-changing', 'unprecedented'), or suspiciously round numbers. Return ONLY the story text — no preamble, no headline.";
+
+  const user = `Write a short market news story about ${focus.name}, a fictional ${focus.sector} company. Pick randomly from: clearly positive, clearly negative, or genuinely mixed. Do not tell the reader which. 3-4 sentences, Reuters/FT ticker style. Do not mention other companies.`;
+
+  try {
+    const txt = await callClaude([{ role: "user", content: user }], sys);
+    state.currentNews = txt.trim();
+    renderNewsAsClickable(state.currentNews);
+    $("sector-chip").textContent = "Focus: " + focus.sector;
+    $("news-status").textContent = "When you're ready, click Invest.";
+  } catch (e) {
+    $("news-body").textContent = "News wire failed: " + e.message + ". Check WORKER_URL in the HTML.";
+  }
+}
+
+function renderCompanies() {
+  const grid = $("co-grid");
+  grid.innerHTML = SECTORS.map((c, i) => `
+    <div class="co-card ${i === state.currentSectorIdx ? 'focal' : ''}" data-idx="${i}">
+      <p class="co-name">${c.name}${i === state.currentSectorIdx ? ' ◆' : ''}</p>
+      <p class="co-sector">${c.sector}</p>
+      <p class="co-price">${fmt(state.prices[i])} / share</p>
+    </div>
+  `).join("");
+  grid.querySelectorAll(".co-card").forEach(el => {
+    el.addEventListener("click", () => {
+      state.selectedCo = parseInt(el.dataset.idx);
+      grid.querySelectorAll(".co-card").forEach(x => x.classList.remove("selected"));
+      el.classList.add("selected");
+      updateInvestUI();
+    });
+  });
+  $("stake").max = state.cash;
+  $("stake").value = 0;
+  $("stake-out").textContent = "£0";
+  state.stake = 0;
+  updateInvestUI();
+}
+
+function updateInvestUI() {
+  const status = $("invest-status");
+  if (state.selectedCo === null) { status.textContent = "Pick a company to continue."; return; }
+  status.textContent = `Selected: ${SECTORS[state.selectedCo].name}. Set your stake.`;
+}
+
+$("stake").addEventListener("input", (e) => {
+  state.stake = parseInt(e.target.value);
+  $("stake-out").textContent = fmt(state.stake);
+});
+
+$("invest-btn").addEventListener("click", async () => {
+  $("invest-err").textContent = "";
+  if (state.selectedCo === null) { $("invest-err").textContent = "Pick a company first."; return; }
+  if (state.stake <= 0) { $("invest-err").textContent = "Stake must be more than zero."; return; }
+  if (state.stake > state.cash) { $("invest-err").textContent = "Not enough cash."; return; }
+  await resolveRound();
+});
+
+async function resolveRound() {
+  $("invest-btn").disabled = true;
+  $("invest-status").textContent = "Running the market…";
+
+  // === 1. Market resolution ===
+  const marketSys = "You are a market simulator. Given news about one fictional company, output percentage moves for all six companies. Focal company moves meaningfully (between -30 and +30). Others move slightly (between -8 and +8). Positive news usually pushes focal up, negative down, but markets sometimes react counter-intuitively. Return ONLY JSON: {\"moves\": [n1,n2,n3,n4,n5,n6]} in order: Helios Solar, Orbital Freight, Marrow Biotech, Northwind Bank, Tessera Games, Grainhouse Foods. No prose, no markdown.";
+
+  const marketUser = `News: "${state.currentNews}"\n\nFocal: ${SECTORS[state.currentSectorIdx].name} (${SECTORS[state.currentSectorIdx].sector}).\n\nReturn JSON.`;
+
+  let moves;
+  try {
+    const raw = await callClaude([{ role: "user", content: marketUser }], marketSys);
+    const cleaned = raw.replace(/```json|```/g, "").trim();
+    moves = JSON.parse(cleaned).moves;
+    if (!Array.isArray(moves) || moves.length !== 6) throw new Error("bad shape");
+  } catch (e) {
+    moves = SECTORS.map((_, i) => i === state.currentSectorIdx ? (Math.random()*40-20) : (Math.random()*10-5));
+  }
+
+  // === 2. Judge the flagged phrases ===
+  let tellJudgement = null;
+  if (state.flags.length > 0) {
+    const flaggedPhrases = state.flags.map(i => state.wordSpans[i].word);
+    const tellSys = "You are judging whether flagged words/phrases in AI-generated financial news are legitimate AI 'tells' — signs of AI-generated text. Good tells: vague sourcing ('sources say', 'observers'), generic hype ('revolutionary', 'game-changing', 'unprecedented'), suspiciously generic descriptions, hedged claims without specifics, round numbers. Bad flags: specific names, specific figures, concrete facts, ordinary financial vocabulary. Return ONLY JSON: {\"judgements\": [{\"phrase\": \"...\", \"isTell\": true/false, \"reason\": \"one sentence\"}]}";
+    const tellUser = `News story: "${state.currentNews}"\n\nFlagged phrases:\n${flaggedPhrases.map(p => `- "${p}"`).join("\n")}\n\nJudge each. Return JSON.`;
+    try {
+      const raw = await callClaude([{ role: "user", content: tellUser }], tellSys);
+      const cleaned = raw.replace(/```json|```/g, "").trim();
+      tellJudgement = JSON.parse(cleaned);
+    } catch (e) {
+      tellJudgement = null;
+    }
+  }
+
+  // Apply moves
+  const oldPrices = [...state.prices];
+  state.prices = state.prices.map((p, i) => Math.max(1, p * (1 + moves[i]/100)));
+
+  const shares = state.stake / oldPrices[state.selectedCo];
+  const newValue = shares * state.prices[state.selectedCo];
+  const profit = newValue - state.stake;
+
+  // Tell bonus: +£200 per correct, -£100 per false flag
+  let tellBonus = 0;
+  if (tellJudgement && tellJudgement.judgements) {
+    tellJudgement.judgements.forEach(j => {
+      tellBonus += j.isTell ? 200 : -100;
+    });
+  }
+
+  state.cash = state.cash - state.stake + newValue + tellBonus;
+  state.bonus += tellBonus;
+
+  state.history.push({
+    round: state.round,
+    company: SECTORS[state.selectedCo].name,
+    stake: state.stake,
+    profit: profit,
+    movePct: Math.round(moves[state.selectedCo] * 10) / 10,
+    tellBonus: tellBonus
+  });
+
+  renderReveal(moves, profit, tellJudgement, tellBonus);
+  $("invest-btn").disabled = false;
+}
+
+function renderReveal(moves, profit, tellJudgement, tellBonus) {
+  const grid = $("reveal-grid");
+  grid.innerHTML = SECTORS.map((c, i) => {
+    const m = Math.round(moves[i] * 10) / 10;
+    const cls = m > 0 ? "up" : m < 0 ? "down" : "flat";
+    const sign = m > 0 ? "+" : "";
+    const mark = i === state.selectedCo ? ' style="border: 2px solid var(--info-border); padding: calc(0.75rem - 1.5px);"' : "";
+    return `<div class="co-card"${mark}>
+      <p class="co-name">${c.name}${i === state.selectedCo ? ' ★' : ''}</p>
+      <p class="co-sector">${c.sector}</p>
+      <p class="co-price">${fmt(state.prices[i])}</p>
+      <p class="co-delta ${cls}">${sign}${m}%</p>
+    </div>`;
+  }).join("");
+
+  const sign = profit >= 0 ? "+" : "";
+  const cls = profit > 0 ? "up" : profit < 0 ? "down" : "flat";
+  const lastH = state.history[state.history.length-1];
+  let statusHtml = `You staked ${fmt(lastH.stake)} on ${SECTORS[state.selectedCo].name}. Market result: <span class="${cls}">${sign}${fmt(profit)}</span>.`;
+  if (tellBonus !== 0) {
+    const bCls = tellBonus > 0 ? "up" : "down";
+    const bSign = tellBonus > 0 ? "+" : "";
+    statusHtml += ` Tell bonus: <span class="${bCls}">${bSign}${fmt(tellBonus)}</span>.`;
+  }
+  statusHtml += ` Cash now ${fmt(state.cash)}.`;
+  $("reveal-status").innerHTML = statusHtml;
+
+  // Tell feedback
+  const fb = $("tell-feedback");
+  if (tellJudgement && tellJudgement.judgements && tellJudgement.judgements.length) {
+    fb.classList.remove("hidden");
+    fb.innerHTML = `<h4>AI tell judgement</h4><ul>` + tellJudgement.judgements.map(j => {
+      const icon = j.isTell ? '<span class="up">✓</span>' : '<span class="down">✗</span>';
+      return `<li>${icon} <strong>"${escapeHtml(j.phrase)}"</strong> — ${escapeHtml(j.reason)}</li>`;
+    }).join("") + `</ul>`;
+    // colour the words in the news body
+    state.flags.forEach((idx, i) => {
+      const judge = tellJudgement.judgements[i];
+      const el = document.querySelector(`[data-idx="${idx}"]`);
+      if (el && judge) {
+        el.classList.remove("flagged");
+        el.classList.add(judge.isTell ? "correct" : "wrong");
+      }
+    });
+  } else {
+    fb.classList.add("hidden");
+  }
+  render();
+  showPhase("reveal");
+}
+
+$("next-btn").addEventListener("click", () => {
+  state.round++;
+  state.selectedCo = null;
+  state.stake = 0;
+  if (state.round > state.maxRounds) {
+    endGame();
+  } else {
+    showPhase("news");
+    generateNews();
+  }
+});
+
+function endGame() {
+  const banner = $("win-banner");
+  const wins = state.history.filter(h => h.profit > 0).length;
+  const totalTellBonus = state.history.reduce((s, h) => s + (h.tellBonus || 0), 0);
+  banner.innerHTML = `Game over. Final cash: <strong>${fmt(state.cash)}</strong>. Profitable in ${wins}/${state.maxRounds} rounds. Tell-spotting bonus: <strong>${totalTellBonus >= 0 ? '+' : ''}${fmt(totalTellBonus)}</strong>.`;
+  showPhase("end");
+}
+
+$("restart-btn").addEventListener("click", () => {
+  state.round = 1; state.cash = 10000; state.bonus = 0;
+  state.prices = SECTORS.map(()=>100);
+  state.history = []; state.selectedCo = null; state.stake = 0;
+  state.flags = []; state.flagsLeft = 3;
+  render(); showPhase("news"); generateNews();
+});
+
+// Kick off
+if (WORKER_URL.includes("YOUR-WORKER")) {
+  $("news-body").innerHTML = '<strong style="color: var(--danger-text)">Setup needed:</strong> open this HTML file and set WORKER_URL near the top of the &lt;script&gt; tag to your deployed Cloudflare Worker URL. See README.md for instructions.';
+} else {
+  render();
+  generateNews();
+}
+</script>
+</body>
+</html>
